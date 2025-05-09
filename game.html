@@ -13,23 +13,23 @@
             align-items: center;
             justify-content: flex-start;
             min-height: 100vh;
-            background-color: #1a202c; /* Default background */
+            background-color: #1a202c;
             color: #e2e8f0;
             margin: 0;
             padding-top: 0.5rem;
             overflow-x: hidden;
-            transition: background-color 0.5s ease; /* Smooth background transition */
+            transition: background-color 0.5s ease; 
         }
         body.hell-mode {
-            background-color: #450a0a; /* Dark red for Hell Mode */
+            background-color: #450a0a; 
         }
         body.endless-mode {
-            background: linear-gradient(to bottom right, #1e3a8a, #5b21b6); /* Blue to purple gradient */
+            background: linear-gradient(to bottom right, #1e3a8a, #5b21b6); 
         }
         #gameCanvas {
             border: 2px solid #4a5568;
             border-radius: 0.5rem;
-            background-color: rgba(45, 55, 72, 0.8); /* Slightly transparent canvas bg */
+            background-color: rgba(45, 55, 72, 0.8); 
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
             cursor: crosshair;
         }
@@ -124,7 +124,7 @@
     </style>
 </head>
 <body class="select-none">
-    <div class="version-box">v4.6</div> 
+    <div class="version-box">v4.8</div> 
     <div id="tempPopup" class="hidden"></div>
 
     <div class="game-container p-1 sm:p-2">
@@ -176,8 +176,10 @@
         <div id="changelogPopup" class="hidden">
              <h2 class="text-xl font-semibold mb-3 text-center text-amber-400">Changelog</h2>
              <div id="changelogContent">
-                 <p>V4.6: revamped enemy tracking and speed, upgraded AI and smarter enemies.</p>
-                 <p>V4.5: added endless and hell mode. polished everything and added to github</p>
+                 <p>4.8: attempted to add in admin panel for admins, failed so bad i lost sleep
+                 <p>4.7: bugfixed because the game wouldn't load
+                 <p>4.6: revamped enemy tracking and speed, upgraded AI and smarter enemies.</p>
+                 <p>4.5: added endless and hell mode. polished everything and added to github</p>
                  <p>4.4: added changelog</p>
                  <p>4.3: fixed aimbot because it kept crashing the testing environment</p>
                  <p>4.2: added aimbot with secret code</p>
