@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shooty Shooty Bang Bang - v4.6</title> 
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: #1a202c; /* Default background */
+            color: #e2e8f0;
+            margin: 0;
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease; /* Smooth background transition */
+        }
+        body.hell-mode {
+            background-color: #450a0a; /* Dark red for Hell Mode */
+        }
+        body.endless-mode {
+            background: linear-gradient(to bottom right, #1e3a8a, #5b21b6); /* Blue to purple gradient */
+        }
+        #gameCanvas {
+            border: 2px solid #4a5568;
+            border-radius: 0.5rem;
+            background-color: rgba(45, 55, 72, 0.8); /* Slightly transparent canvas bg */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            cursor: crosshair;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            width: 98%;
+            max-width: 1200px;
+        }
+        #messageBox, #tempPopup, #changelogPopup { 
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(45, 55, 72, 0.97);
+            color: white; padding: 1.5rem 2rem; border-radius: 0.5rem;
+            text-align: center; font-size: 1.25rem; z-index: 100;
+            box-shadow: 0 0 25px rgba(0,0,0,0.6); width: 90%; max-width: 550px; 
+        }
+        #changelogPopup {
+             text-align: left; 
+             font-size: 0.9rem; 
+             max-height: 80vh; 
+             overflow-y: auto;
+        }
+        #changelogContent p {
+            margin-bottom: 0.3rem; 
+            line-height: 1.4;
+        }
+        #tempPopup { padding: 1rem 1.5rem; font-size: 1rem; z-index: 101; }
+        .hidden { display: none !important; }
+        .ui-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0.25rem 0.5rem;
+            box-sizing: border-box;
+            font-size: 0.85rem; 
+            background-color: #2d3748;
+            border-radius: 0.375rem;
+            margin-bottom: 0.25rem;
+        }
+        .version-box { position: absolute; top: 5px; right: 10px; font-size: 0.75rem; color: #6b7280; }
+        .charge-container { background-color: #4a5568; width: 60px; height: 10px; border-radius: 0.25rem; overflow: hidden; border: 1px solid #718096;}
+        .charge-bar { height: 100%; width: 0%; transition: width 0.1s linear; border-radius: 0.25rem; }
+        .beam-charge-bar { background-color: #f59e0b; /* Amber */ }
+        .smash-charge-bar { background-color: #ef4444; /* Red */ }
+        .stage-info { font-size: 1rem; font-weight: 600; color: #93c5fd; }
+        .controls-info { background-color: #2d3748; padding: 0.5rem; border-radius: 0.5rem; margin-top: 0.5rem; font-size: 0.7rem; text-align: center; width: 100%;}
+        #leaderboardContainer { margin-top: 0.5rem; padding: 0.75rem; background-color: #2d3748; border-radius: 0.5rem; width: 90%; max-width: 450px; text-align: center; }
+        #leaderboardList { list-style: none; padding: 0; max-height: 120px; overflow-y: auto; }
+        #leaderboardList li { padding: 0.2rem 0; border-bottom: 1px solid #4a5568; font-size: 0.8rem; }
+        #leaderboardList li:last-child { border-bottom: none; }
+        .input-group { margin-top: 0.5rem; }
+        .input-group input { background-color: #1a202c; color: #e2e8f0; border: 1px solid #4a5568; padding: 0.4rem; border-radius: 0.25rem; margin-right: 0.25rem; font-size: 0.9rem;}
+        .button { padding: 0.4rem 0.8rem; font-weight: 600; border-radius: 0.375rem; transition: background-color 0.2s; cursor: pointer; border: none; font-size: 0.9rem;}
+        .button-primary { background-color: #fb923c; color: white; }
+        .button-primary:hover { background-color: #f97316; }
+        .button-secondary { background-color: #6b7280; color: white; }
+        .button-secondary:hover { background-color: #4b5563; }
+        .button-danger { background-color: #dc2626; color: white; } 
+        .button-danger:hover { background-color: #b91c1c; } 
+        .button-special { background-color: #7c3aed; color: white; } 
+        .button-special:hover { background-color: #6d28d9; } 
+
+        .button-close { 
+            position: absolute;
+            top: 0.5rem;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: #9ca3af; 
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .button-close:hover { color: #e2e8f0; }
+        .extra-buttons-container { 
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem; 
+            text-align: center; 
+            justify-content: center;
+        }
+        .mode-selection-buttons { 
+             display: flex;
+             justify-content: center;
+             gap: 1rem;
+             margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="select-none">
+    <div class="version-box">v4.6</div> 
+    <div id="tempPopup" class="hidden"></div>
+
+    <div class="game-container p-1 sm:p-2">
+        <h1 class="text-2xl sm:text-3xl font-bold mb-1 text-orange-400">shooty shooty bang bang</h1>
+        
+        <div class="ui-top-bar">
+            <div id="healthDisplay" class="text-xs sm:text-sm">Health: 100</div>
+            <div id="scoreDisplay" class="text-xs sm:text-sm font-semibold text-yellow-400">Score: 0</div>
+            <div class="flex items-center gap-1 sm:gap-2">
+                <span class="text-2xs sm:text-xs">Beam:</span>
+                <div class="charge-container">
+                    <div class="charge-bar beam-charge-bar"></div>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 sm:gap-2">
+                <span class="text-2xs sm:text-xs">Smash:</span>
+                <div class="charge-container">
+                    <div class="charge-bar smash-charge-bar"></div>
+                </div>
+            </div>
+            <div id="bulletCountDisplay" class="text-xs sm:text-sm text-cyan-400">Shots: 1</div>
+        </div>
+
+        <div id="stageDisplay" class="stage-info text-base sm:text-lg">Stage 1: Wave 1</div>
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="messageBox" class="hidden">
+            <p id="messageText" class="mb-2"></p>
+            <div id="codeInputSection" class="hidden input-group">
+                <input type="text" id="codeInput" placeholder="Enter Code">
+                <button id="submitCodeButton" class="button button-primary text-xs">Submit</button>
+                <button id="cancelCodeButton" class="button button-secondary text-xs ml-2">Cancel</button>
+            </div>
+            <div id="deathOptions" class="hidden flex justify-center gap-2 mt-1">
+                 <button id="actionButton1" class="button button-primary">Play Again</button>
+                 <button id="actionButton2" class="button button-secondary">Revive</button>
+            </div>
+             <div id="completionOptions" class="hidden mode-selection-buttons">
+                 <button id="hellModeButton" class="button button-danger">Hell Mode</button>
+                 <button id="endlessModeButton" class="button button-special">Endless Mode</button>
+            </div>
+             <div id="hellConfirmOptions" class="hidden mode-selection-buttons">
+                 <button id="confirmHellButton" class="button button-danger">Yes, Unleash Hell!</button>
+                 <button id="cancelHellButton" class="button button-secondary">Maybe Later</button>
+            </div>
+            <button id="closeMessageBoxButton" class="button-close">&times;</button> 
+        </div>
+
+        <div id="changelogPopup" class="hidden">
+             <h2 class="text-xl font-semibold mb-3 text-center text-amber-400">Changelog</h2>
+             <div id="changelogContent">
+                 <p>V4.6: revamped enemy tracking and speed, upgraded AI and smarter enemies.</p>
+                 <p>V4.5: added endless and hell mode. polished everything and added to github</p>
+                 <p>4.4: added changelog</p>
+                 <p>4.3: fixed aimbot because it kept crashing the testing environment</p>
+                 <p>4.2: added aimbot with secret code</p>
+                 <p>4.1: rewrote the entire code cause it literally just wouldn't run</p>
+                 <p>4.0: added revive feature with secret code</p>
+                 <p>3.4: changed overall look to entities with more shapes and colors</p>
+                 <p>3.3: bugfixes</p>
+                 <p>3.2: added more friendly arrow movement</p>
+                 <p>3.1: fixed mouse control mode</p>
+                 <p>3.0: added mouse control mode</p>
+                 <p>2.2: attempted background music, failed miserably</p>
+                 <p>2.0: brand new UI with new colors and faces to enemies (AHH ITS SO GOOD)</p>
+                 <p>1.4: bugfixing cause it broken</p>
+                 <p>1.3: updated beam attack UI cause it looks like Microsoft paint</p>
+                 <p>1.2: new attack mode: beam</p>
+                 <p>1.1: new UI cause old one was hella ugly</p>
+                 <p>1.0: initial release, what did you expect</p>
+             </div>
+             <button id="closeChangelogButton" class="button-close">&times;</button> 
+        </div>
+
+
+        <div class="controls-info">
+            <p class="font-semibold mb-0.5">Controls:</p>
+            <p><span class="text-orange-400">Player:</span> WASD to Move, Space/Click to Shoot, B for Beam, X for Smash, M for Mouse Aim</p>
+            <p class="mt-0.5 text-2xs text-gray-300">Beam: 21s, Smash: 37.5s. Targets hurt on touch!</p> 
+        </div>
+         <div class="extra-buttons-container"> 
+            <button id="aimbotButton" class="button button-secondary text-xs">Aimbot</button>
+            <button id="changelogButton" class="button button-secondary text-xs">Changelog</button> 
+        </div>
+
+        <div id="leaderboardContainer" class="hidden">
+            <h2 class="text-lg font-semibold mb-1 text-amber-400">Local Leaderboard</h2>
+            <ul id="leaderboardList"></ul>
+            <p class="text-2xs text-gray-500 mt-1">(Scores are saved in this browser only)</p>
+        </div>
+    </div>
+
+    <script>
+        // Wrap entire script logic in DOMContentLoaded listener
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Canvas and Context Setup ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const stageDisplay = document.getElementById('stageDisplay');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const healthDisplay = document.getElementById('healthDisplay');
+            const tempPopup = document.getElementById('tempPopup');
+            const aimbotButton = document.getElementById('aimbotButton');
+            const changelogButton = document.getElementById('changelogButton'); 
+            const changelogPopup = document.getElementById('changelogPopup'); 
+            const closeChangelogButton = document.getElementById('closeChangelogButton'); 
+            const closeMessageBoxButton = document.getElementById('closeMessageBoxButton'); 
+            const bulletCountDisplay = document.getElementById('bulletCountDisplay'); 
+
+            // --- Game Constants & Variables ---
+            let CANVAS_WIDTH = 800;
+            let CANVAS_HEIGHT = 600;
+            const PLAYER_WIDTH = 30;
+            const PLAYER_HEIGHT = 40;
+            const PROJECTILE_WIDTH = 8; 
+            const PROJECTILE_HEIGHT = 4;
+            const ENEMY_PROJECTILE_WIDTH = 6;
+            const ENEMY_PROJECTILE_HEIGHT = 6;
+            const POWERUP_SIZE = 20;
+            const BEAM_THICKNESS = 20;
+            const TARGET_SIZE_MIN = 20; 
+            const TARGET_SIZE_MAX = 30;
+            const TARGET_BASE_SPEED = 0.25; 
+            const TARGET_SPEED_INCREMENT = 0.03;
+            const TARGET_CONTACT_DAMAGE = 5;
+            const SCORE_PER_HIT = 50;
+            const SCORE_PER_BEAM_FRAME = 3; 
+            const SCORE_PER_SMASH_HIT = 25;
+            const MAX_WAVES_PER_LEVEL = 3;
+            const COMPLETION_STAGE = 10; 
+            const BEAM_CHARGE_MAX = 21000; 
+            const SMASH_CHARGE_MAX = 37500; 
+            const BEAM_ACTIVE_DURATION = 1500; 
+            const POWERUP_SPAWN_INTERVAL = 15000; 
+            const MAX_BULLET_COUNT = 5;
+            const HELL_MODE_SPAWN_INTERVAL = 1500; 
+            const HELL_MODE_EXTRA_SPAWN_COUNT = 2; 
+
+            let gameRunning = true;
+            let currentStage = 1;
+            let currentWave = 1;
+            let targetsPerWaveBase = 3;
+            let gameTargets = [];
+            let enemyProjectiles = [];
+            let powerUps = []; 
+            let playerScore = 0;
+            let mouseAimActive = false;
+            let mouseX = 0;
+            let mouseY = 0;
+            let aimbotActive = false;
+            const AIMBOT_SHOOT_DELAY = 40;
+            let currentPopupAction = null; 
+            let isPopupOpen = false; 
+            let gameMode = 'normal'; 
+            let nextPowerUpSpawnTime = 0; 
+            let nextHellSpawnTime = 0; 
+
+            const messageBox = document.getElementById('messageBox');
+            const messageText = document.getElementById('messageText');
+            const codeInputSection = document.getElementById('codeInputSection'); 
+            const codeInput = document.getElementById('codeInput'); 
+            const submitCodeButton = document.getElementById('submitCodeButton'); 
+            const cancelCodeButton = document.getElementById('cancelCodeButton'); 
+            const deathOptions = document.getElementById('deathOptions'); 
+            const completionOptions = document.getElementById('completionOptions'); 
+            const hellModeButton = document.getElementById('hellModeButton'); 
+            const endlessModeButton = document.getElementById('endlessModeButton'); 
+            const hellConfirmOptions = document.getElementById('hellConfirmOptions'); 
+            const confirmHellButton = document.getElementById('confirmHellButton'); 
+            const cancelHellButton = document.getElementById('cancelHellButton'); 
+            const actionButton1 = document.getElementById('actionButton1');
+            const actionButton2 = document.getElementById('actionButton2');
+            const leaderboardContainer = document.getElementById('leaderboardContainer');
+            const leaderboardList = document.getElementById('leaderboardList');
+
+            const FOX_TYPES = { "Ranger": { color: "rgb(251, 146, 60)", speed: 3.5, health: 100, projectileSpeed: 8, projectileColor: "rgb(239, 68, 68)" } };
+
+            const keysPressed = {};
+            // --- INPUT HANDLING ---
+            window.addEventListener('keydown', (e) => {
+                if (!codeInputSection.classList.contains('hidden') && e.code === 'Enter' && document.activeElement === codeInput) {
+                     e.preventDefault(); 
+                     submitCodeButton.click(); 
+                     return; 
+                }
+                if (e.code === 'Escape') {
+                    closeMessageBox();
+                    closeChangelog();
+                }
+                
+                if (isPopupOpen) {
+                    if (e.code === 'Space') e.preventDefault(); 
+                    return; 
+                }
+                keysPressed[e.code] = true;
+                if (['Space', 'KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+                    e.preventDefault(); 
+                }
+                if (e.code === 'KeyM') { toggleMouseAim(); }
+                if (e.code === 'KeyX' && player1 && player1.smashReady && !player1.isSmashing) { player1.fireSmash(); }
+            });
+            window.addEventListener('keyup', (e) => {
+                keysPressed[e.code] = false; 
+            });
+            canvas.addEventListener('mousemove', (e) => {
+                if (isPopupOpen) return; 
+                const rect = canvas.getBoundingClientRect(); mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
+            });
+            canvas.addEventListener('click', () => { 
+                if (isPopupOpen) return; 
+                if (mouseAimActive && !aimbotActive && player1 && player1.health > 0) { 
+                    player1.shoot(true); 
+                } 
+            });
+            
+            // --- AIMBOT BUTTON LOGIC ---
+            aimbotButton.addEventListener('click', () => {
+                if (isPopupOpen) return; 
+                console.log("Aimbot button clicked!"); 
+                if (aimbotActive) {
+                    aimbotActive = false;
+                    showTemporaryPopup("Aimbot Deactivated!");
+                    return; 
+                }
+                messageText.textContent = "Enter Admin Code:";
+                codeInputSection.classList.remove('hidden');
+                deathOptions.classList.add('hidden'); 
+                completionOptions.classList.add('hidden');
+                hellConfirmOptions.classList.add('hidden');
+                messageBox.classList.remove('hidden');
+                isPopupOpen = true; 
+                codeInput.value = ""; 
+                codeInput.focus();
+                currentPopupAction = 'aimbot'; 
+            });
+
+            // --- REVIVE BUTTON LOGIC --- 
+            actionButton2.addEventListener('click', () => { 
+                messageText.textContent = "Enter Revive Code:";
+                codeInputSection.classList.remove('hidden');
+                deathOptions.classList.add('hidden'); 
+                completionOptions.classList.add('hidden');
+                hellConfirmOptions.classList.add('hidden');
+                messageBox.classList.remove('hidden');
+                isPopupOpen = true; 
+                codeInput.value = ""; 
+                codeInput.focus();
+                currentPopupAction = 'revive'; 
+            });
+
+            // --- CHANGELOG BUTTON LOGIC ---
+            changelogButton.addEventListener('click', () => {
+                if (isPopupOpen) return;
+                changelogPopup.classList.remove('hidden');
+                isPopupOpen = true; 
+            });
+
+            // --- MODE SELECTION BUTTON LOGIC ---
+            hellModeButton.addEventListener('click', () => {
+                messageText.textContent = "Warning: Hell Mode is for HIGHLY ADVANCED PLAYERS ONLY. Proceed?";
+                completionOptions.classList.add('hidden');
+                hellConfirmOptions.classList.remove('hidden');
+                isPopupOpen = true; 
+            });
+
+            endlessModeButton.addEventListener('click', () => {
+                closeMessageBox(); 
+                gameMode = 'endless';
+                document.body.classList.remove('hell-mode'); 
+                document.body.classList.add('endless-mode');
+                
+                tempPopup.textContent = "Thanks for playing! Enjoy the rest of this game. More updates will be on the way, stay tuned and have fun!";
+                tempPopup.classList.remove('hidden');
+                setTimeout(() => { tempPopup.classList.add('hidden'); }, 10000); 
+
+                player1.reset(true); 
+                initializeStage(1, 1); 
+                gameRunning = true;
+                lastFrameTime = performance.now();
+                requestAnimationFrame(gameLoop); 
+            });
+
+            // --- HELL MODE CONFIRMATION LOGIC ---
+            confirmHellButton.addEventListener('click', () => {
+                closeMessageBox();
+                gameMode = 'hell';
+                document.body.classList.remove('endless-mode');
+                document.body.classList.add('hell-mode');
+                stageDisplay.textContent = "HELL MODE ENABLED"; 
+
+                player1.reset(true); 
+                player1.health = 200; 
+                player1.initialHealth = 200; 
+                
+                initializeStage(1, 1); 
+                gameRunning = true;
+                lastFrameTime = performance.now();
+                requestAnimationFrame(gameLoop); 
+            });
+
+            cancelHellButton.addEventListener('click', () => {
+                 messageText.textContent = "You have successfully beat all the stages! Now you can choose to go into Hell Mode, or Endless Mode.";
+                 hellConfirmOptions.classList.add('hidden');
+                 completionOptions.classList.remove('hidden');
+                 isPopupOpen = true; 
+            });
+
+
+            // --- ADD EVENT LISTENERS FOR POPUP CLOSE BUTTONS ---
+            closeChangelogButton.addEventListener('click', closeChangelog);
+            closeMessageBoxButton.addEventListener('click', closeMessageBox);
+            
+            // --- CODE SUBMISSION LOGIC ---
+            submitCodeButton.addEventListener('click', () => {
+                const code = codeInput.value.trim().toLowerCase(); 
+                
+                if (currentPopupAction === 'aimbot') {
+                    console.log("Checking aimbot code:", code); 
+                    if (code === "ultramegasecretmaxpowerscode") { 
+                        aimbotActive = true;
+                        showTemporaryPopup("Aimbot Enabled!"); 
+                        console.log("Aimbot enabled via code input!"); 
+                    } else { 
+                        showTemporaryPopup("Incorrect Code.");
+                        console.log("Incorrect aimbot code entered."); 
+                    }
+                     closeMessageBox(); 
+                } else if (currentPopupAction === 'revive') {
+                     console.log("Checking revive code:", code); 
+                    if (code === "nugget") { 
+                        player1.reset(false); 
+                        player1.health = player1.initialHealth; 
+                        gameRunning = true; 
+                        lastFrameTime = performance.now(); 
+                        console.log("Revive successful!"); 
+                        closeMessageBox(); 
+                        requestAnimationFrame(gameLoop); 
+                    } else { 
+                        messageText.textContent = "Incorrect Code. Try Respawn?"; 
+                        codeInputSection.classList.add('hidden'); 
+                        deathOptions.classList.remove('hidden'); 
+                        console.log("Incorrect revive code."); 
+                        isPopupOpen = true; 
+                        currentPopupAction = 'revive_failed'; 
+                        // Don't close message box on failure
+                    }
+                }
+            });
+
+            // --- CANCEL CODE INPUT / CLOSE POPUP FUNCTIONS ---
+            function closeMessageBox() {
+                 messageBox.classList.add('hidden');
+                 codeInputSection.classList.add('hidden'); 
+                 deathOptions.classList.add('hidden'); 
+                 completionOptions.classList.add('hidden');
+                 hellConfirmOptions.classList.add('hidden');
+                 isPopupOpen = false; 
+                 currentPopupAction = null;
+                 if (!gameRunning && player1 && player1.health <= 0) {
+                     // Don't restart loop here, wait for Respawn button
+                 } else if (!gameRunning && currentStage > COMPLETION_STAGE) {
+                     // Don't restart loop if game was completed, wait for mode choice
+                 }
+            }
+            function closeChangelog() {
+                changelogPopup.classList.add('hidden');
+                isPopupOpen = false;
+            }
+            cancelCodeButton.addEventListener('click', () => {
+                 if (currentPopupAction === 'revive' || currentPopupAction === 'revive_failed') {
+                     deathOptions.classList.remove('hidden');
+                     messageBox.classList.remove('hidden'); 
+                     messageText.textContent = "Game Over!"; 
+                     isPopupOpen = true; 
+                     codeInputSection.classList.add('hidden'); 
+                 } else {
+                      closeMessageBox(); 
+                 }
+                 currentPopupAction = null;
+            });
+
+
+            function showTemporaryPopup(message) {
+                tempPopup.textContent = message; tempPopup.classList.remove('hidden');
+                setTimeout(() => { tempPopup.classList.add('hidden'); }, 2000);
+            };
+            function toggleMouseAim() {
+                 if (isPopupOpen) return; 
+                mouseAimActive = !mouseAimActive; showTemporaryPopup(mouseAimActive ? "Mouse Aim Activated!" : "Mouse Aim Deactivated!");
+                canvas.style.cursor = mouseAimActive ? 'crosshair' : 'default';
+                if (mouseAimActive && aimbotActive) { 
+                    showTemporaryPopup("Aimbot is active, mouse aim will be overridden by Aimbot targeting.");
+                }
+            };
+
+            // --- PowerUp Class ---
+            class PowerUp {
+                constructor(x, y, type) {
+                    this.x = x;
+                    this.y = y;
+                    this.type = type; // e.g., 'multiShot'
+                    this.size = POWERUP_SIZE;
+                    this.color = 'rgb(34, 197, 94)'; // Green orb
+                    this.symbolColor = 'rgb(255, 255, 255)';
+                    this.createdAt = Date.now();
+                    this.lifetime = 10000; // Despawn after 10 seconds
+                }
+
+                draw() {
+                    // Orb
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(this.x + this.size / 2, this.y + this.size / 2, this.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Simple bullet symbol (rectangle)
+                    ctx.fillStyle = this.symbolColor;
+                    const bulletW = this.size * 0.2;
+                    const bulletH = this.size * 0.4;
+                    ctx.fillRect(this.x + this.size / 2 - bulletW / 2, this.y + this.size / 2 - bulletH / 2, bulletW, bulletH);
+                }
+
+                update(deltaTime) {
+                    // Check lifetime
+                    if (Date.now() - this.createdAt > this.lifetime) {
+                        return true; // Signal removal
+                    }
+                    return false; // Keep power-up
+                }
+            }
+
+            // --- Target Class ---
+            class Target {
+                constructor(x, y, type) {
+                    this.type = type; this.size = Math.random() * (TARGET_SIZE_MAX - TARGET_SIZE_MIN) + TARGET_SIZE_MIN;
+                    this.x = x; this.y = y; this.width = this.size; this.height = this.size;
+                    let speedMultiplier = 1.0 + (Math.random() - 0.5) * 0.3; 
+                    if (gameMode === 'hell') speedMultiplier *= 3.0; // Increased Hell speed multiplier
+                    else if (gameMode === 'endless') speedMultiplier *= 1.2; 
+                    this.speed = (TARGET_BASE_SPEED + (currentWave-1) * TARGET_SPEED_INCREMENT + (currentStage-1) * TARGET_SPEED_INCREMENT * 2) * speedMultiplier;
+                    this.projectileColor = "rgb(200, 200, 200)";
+                    this.projectileDamage = 10; 
+                    this.repulsionForce = 0.6; 
+
+                    switch(type) {
+                        case 'purple': this.color = "rgb(168, 85, 247)"; this.faceColor = "rgb(126, 34, 206)"; this.health = 40 + currentWave * 5 + currentStage * 10; this.shootCooldown = (gameMode === 'hell' ? 600 : (gameMode === 'endless' ? 1700 : 2000)); this.canShoot = true; if (gameMode === 'hell') this.projectileDamage = 30; break; // Increased Hell damage
+                        case 'orange': this.color = "rgb(249, 115, 22)"; this.faceColor = "rgb(194, 65, 12)"; this.health = 30 + currentWave * 5 + currentStage * 8; this.shootCooldown = (gameMode === 'hell' ? 400 : (gameMode === 'endless' ? 850 : 1000)); this.canShoot = true; if (gameMode === 'hell') this.projectileDamage = 30; break; // Increased Hell damage
+                        case 'green': this.color = "rgb(34, 197, 94)"; this.faceColor = "rgb(21, 128, 61)"; this.health = 50 + currentWave * 8 + currentStage * 12; this.speed *= 1.5; if (gameMode === 'hell') this.speed *= 1.6; this.canShoot = false; break; // Further increased Hell speed
+                        case 'blue': this.color = "rgb(59, 130, 246)"; this.faceColor = "rgb(29, 78, 216)"; this.health = 20 + currentWave * 3 + currentStage * 5; this.speed *= 0.6; this.canShoot = false; break; // Even slower blue
+                        default: this.color = "rgb(107, 114, 128)"; this.faceColor = "rgb(55, 65, 81)"; this.health = 30 + currentWave * 5 + currentStage * 5; this.canShoot = false;
+                    }
+                    this.initialHealth = this.health; this.lastShotTime = 0;
+                }
+                draw() { /* ... (same) ... */
+                    ctx.fillStyle = this.color; ctx.beginPath();
+                    if (this.type === 'purple') { ctx.rect(this.x, this.y, this.width, this.height); }
+                    else if (this.type === 'orange') { ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2); }
+                    else if (this.type === 'green') { ctx.moveTo(this.x + this.width / 2, this.y); ctx.lineTo(this.x + this.width, this.y + this.height); ctx.lineTo(this.x, this.y + this.height); ctx.closePath();}
+                    else { const r = this.width / 4; ctx.moveTo(this.x + r, this.y); ctx.arcTo(this.x + this.width, this.y, this.x + this.width, this.y + this.height, r); ctx.arcTo(this.x + this.width, this.y + this.height, this.x, this.y + this.height, r); ctx.arcTo(this.x, this.y + this.height, this.x, this.y, r); ctx.arcTo(this.x, this.y, this.x + this.width, this.y, r); ctx.closePath(); }
+                    ctx.fill();
+                    ctx.fillStyle = this.faceColor; const eyeSize = this.width / 5;
+                    ctx.fillRect(this.x + this.width * 0.2 - eyeSize / 2, this.y + this.height * 0.3 - eyeSize/2, eyeSize, eyeSize);
+                    ctx.fillRect(this.x + this.width * 0.8 - eyeSize / 2, this.y + this.height * 0.3 - eyeSize/2, eyeSize, eyeSize);
+                    if (this.health < this.initialHealth && this.health > 0) { const hBW = this.width; const hBH = 3; const hP = this.health / this.initialHealth; ctx.fillStyle = '#4A5568'; ctx.fillRect(this.x, this.y - hBH - 2, hBW, hBH); ctx.fillStyle = 'rgb(239, 68, 68)'; ctx.fillRect(this.x, this.y - hBH - 2, hBW * hP, hBH); }
+                }
+                update(playerX, playerY, deltaTime, otherTargets) {
+                    const dtFactor = deltaTime / (1000/60);
+                    
+                    // --- Movement towards player ---
+                    const dxToPlayer = playerX + PLAYER_WIDTH / 2 - (this.x + this.width / 2); 
+                    const dyToPlayer = playerY + PLAYER_HEIGHT / 2 - (this.y + this.height / 2);
+                    const distToPlayer = Math.sqrt(dxToPlayer * dxToPlayer + dyToPlayer * dyToPlayer);
+                    let moveX = 0;
+                    let moveY = 0;
+                    if (distToPlayer > 0) { 
+                        moveX += (dxToPlayer / distToPlayer) * this.speed;
+                        moveY += (dyToPlayer / distToPlayer) * this.speed;
+                    }
+
+                    // --- Repulsion from other targets ---
+                    let repelX = 0;
+                    let repelY = 0;
+                    otherTargets.forEach(other => {
+                        if (other === this) return; 
+                        const dx = this.x - other.x;
+                        const dy = this.y - other.y;
+                        const distSq = dx * dx + dy * dy;
+                        const minDist = (this.size + other.size) * 0.7; 
+
+                        if (distSq < minDist * minDist && distSq > 0) {
+                            const dist = Math.sqrt(distSq);
+                            const force = this.repulsionForce * (1 - dist / minDist); 
+                            repelX += (dx / dist) * force;
+                            repelY += (dy / dist) * force;
+                        }
+                    });
+                    
+                    this.x += (moveX + repelX) * dtFactor;
+                    this.y += (moveY + repelY) * dtFactor;
+
+                    // --- Shooting Logic ---
+                    if (this.canShoot && Date.now() - this.lastShotTime > this.shootCooldown) {
+                        this.lastShotTime = Date.now(); 
+                        const aimDx = playerX + PLAYER_WIDTH / 2 - (this.x + this.width / 2); 
+                        const aimDy = playerY + PLAYER_HEIGHT / 2 - (this.y + this.height / 2);
+                        const aimDist = Math.sqrt(aimDx*aimDx + aimDy*aimDy); 
+                        let sX=0,sY=0; 
+                        if(aimDist>0){sX=(aimDx/aimDist)*4;sY=(aimDy/aimDist)*4;} // Enemy projectile speed remains 4
+                        enemyProjectiles.push(new EnemyProjectile(this.x + this.width/2, this.y + this.height/2, sX, sY, this.projectileColor, this.projectileDamage));
+                    }
+                }
+                takeDamage(amount) { this.health -= amount; if (this.health < 0) {this.health = 0;} }
+            }
+            
+            // --- Enemy Projectile Class ---
+            class EnemyProjectile {
+                constructor(x,y,sX,sY,c, damage = 10){ 
+                    this.x=x-ENEMY_PROJECTILE_WIDTH/2;this.y=y-ENEMY_PROJECTILE_HEIGHT/2;
+                    this.width=ENEMY_PROJECTILE_WIDTH;this.height=ENEMY_PROJECTILE_HEIGHT;
+                    this.speedX=sX;this.speedY=sY;this.color=c;
+                    this.damage = damage; 
+                    this.trail = []; 
+                    this.maxTrailLength = (gameMode === 'hell') ? 10 : 0; 
+                }
+                draw(){
+                    if (this.maxTrailLength > 0) {
+                        for (let i = 0; i < this.trail.length; i++) {
+                            const point = this.trail[i];
+                            const alpha = 0.5 * (i / this.trail.length); 
+                            ctx.fillStyle = `rgba(255, 0, 0, ${alpha})`; 
+                            ctx.beginPath();
+                            ctx.arc(point.x + this.width / 2, point.y + this.height / 2, this.width / 3 * (i / this.trail.length), 0, Math.PI * 2); 
+                            ctx.fill();
+                        }
+                    }
+                    ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(this.x+this.width/2,this.y+this.height/2,this.width/2,0,Math.PI*2);ctx.fill();
+                }
+                update(deltaTime){
+                    const dtFactor=deltaTime/(1000/60);
+                    if (this.maxTrailLength > 0) {
+                        this.trail.push({ x: this.x, y: this.y });
+                        if (this.trail.length > this.maxTrailLength) {
+                            this.trail.shift(); 
+                        }
+                    }
+                    this.x+=this.speedX*dtFactor;
+                    this.y+=this.speedY*dtFactor;
+                }
+            }
+
+            // --- Fox Player Class ---
+            class FoxPlayer {
+                constructor(x, y, foxTypeName, controls) {
+                    this.type = FOX_TYPES[foxTypeName]; this.x = x; this.y = y; this.width = PLAYER_WIDTH; this.height = PLAYER_HEIGHT;
+                    this.color = this.type.color; this.speed = this.type.speed; 
+                    this.health = (gameMode === 'hell') ? 200 : this.type.health; 
+                    this.initialHealth = this.health; 
+                    this.controls = controls;
+                    this.projectiles = []; this.shootDelayBase = 250; this.lastShotTime = 0;
+                    this.beamCharge = 0; this.beamChargeMax = BEAM_CHARGE_MAX; this.beamReady = false;
+                    this.isFiringBeam = false; this.beamActiveDuration = BEAM_ACTIVE_DURATION; this.beamActiveStartTime = 0;
+                    this.beamDamagePerFrame = 2;
+                    this.smashCharge = 0; this.smashChargeMax = SMASH_CHARGE_MAX; this.smashReady = false;
+                    this.isSmashing = false; this.smashRadius = 0; this.smashMaxRadius = Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) * 0.75;
+                    this.smashExpansionSpeed = this.smashMaxRadius / 60; 
+                    this.lastMoveDx = 1; this.lastMoveDy = 0; this.aimAngle = 0;
+                    this.aimbotTarget = null; 
+                    this.bulletCount = 1; 
+                }
+
+                draw() { /* ... (same) ... */
+                    ctx.fillStyle = this.color; ctx.fillRect(this.x, this.y, this.width, this.height);
+                    ctx.save(); ctx.translate(this.x + this.width / 2, this.y + this.height / 2); ctx.rotate(this.aimAngle);
+                    ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; ctx.lineWidth = 2; ctx.beginPath();
+                    ctx.moveTo(15, 0); ctx.lineTo(30, 0); ctx.lineTo(25, -5); ctx.moveTo(30, 0); ctx.lineTo(25, 5); ctx.stroke();
+                    ctx.restore();
+                    if (aimbotActive && this.aimbotTarget) { ctx.strokeStyle = "rgba(255, 0, 0, 0.6)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(this.x + this.width / 2, this.y + this.height / 2); ctx.lineTo(this.aimbotTarget.x + this.aimbotTarget.width / 2, this.aimbotTarget.y + this.aimbotTarget.height / 2); ctx.stroke(); }
+                    if (this.isFiringBeam) { ctx.save(); ctx.translate(this.x + this.width / 2, this.y + this.height / 2); ctx.rotate(this.aimAngle); ctx.fillStyle = "rgba(255, 255, 0, 0.6)"; ctx.fillRect(this.width/2 - 5, -BEAM_THICKNESS / 2, CANVAS_WIDTH * 1.5, BEAM_THICKNESS); ctx.restore(); }
+                    if (this.isSmashing) { ctx.beginPath(); ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.smashRadius, 0, Math.PI * 2); ctx.fillStyle = `rgba(255, 87, 34, ${0.6 - (this.smashRadius / this.smashMaxRadius) * 0.4})`; ctx.fill(); }
+                }
+                
+                updateChargeIndicators() { /* ... (same) ... */
+                    const beamBar = document.querySelector('.beam-charge-bar'); if (beamBar) { const bCP = this.beamCharge / this.beamChargeMax; beamBar.style.width = `${Math.min(100, bCP * 100)}%`; beamBar.style.backgroundColor = this.beamReady ? 'rgb(34,197,94)' : '#f59e0b';}
+                    const smashBar = document.querySelector('.smash-charge-bar'); if (smashBar) { const sCP = this.smashCharge / this.smashChargeMax; smashBar.style.width = `${Math.min(100, sCP * 100)}%`; smashBar.style.backgroundColor = this.smashReady ? 'rgb(168, 85, 247)' : '#ef4444';}
+                }
+
+                updateAimDirection() { /* ... (same) ... */
+                    this.aimbotTarget = null; 
+                    if (aimbotActive) {
+                        let closestTarget = null; let minDistanceSq = Infinity;
+                        gameTargets.forEach(target => { const dx = target.x + target.width/2 - (this.x + this.width/2); const dy = target.y + target.height/2 - (this.y + this.height/2); const distSq = dx*dx + dy*dy; if (distSq < minDistanceSq) { minDistanceSq = distSq; closestTarget = target; }});
+                        if (closestTarget) { const dx = closestTarget.x + closestTarget.width/2 - (this.x + this.width/2); const dy = closestTarget.y + closestTarget.height/2 - (this.y + this.height/2); this.aimAngle = Math.atan2(dy, dx); this.aimbotTarget = closestTarget; } 
+                    } else if (mouseAimActive) {
+                        const dx = mouseX - (this.x + this.width / 2); const dy = mouseY - (this.y + this.height / 2); this.aimAngle = Math.atan2(dy, dx);
+                    } else {
+                        let keyAimDx = 0; let keyAimDy = 0;
+                        if (keysPressed[this.controls.left]) { keyAimDx -= 1; } if (keysPressed[this.controls.right]) { keyAimDx += 1; }
+                        if (keysPressed[this.controls.up]) { keyAimDy -= 1; } if (keysPressed[this.controls.down]) { keyAimDy += 1; }
+                        if (keyAimDx !== 0 || keyAimDy !== 0) { this.aimAngle = Math.atan2(keyAimDy, keyAimDx); }
+                    }
+                }
+
+                move(deltaTime) { /* ... (same) ... */
+                    let moveDx = 0; let moveDy = 0;
+                    if (keysPressed[this.controls.left])  { moveDx -= 1; } if (keysPressed[this.controls.right]) { moveDx += 1; }
+                    if (keysPressed[this.controls.up])    { moveDy -= 1; } if (keysPressed[this.controls.down])  { moveDy += 1; }
+                    const currentSpeed = this.speed * (deltaTime / (1000/60));
+                    if (moveDx !== 0 || moveDy !== 0) { const dist = Math.sqrt(moveDx*moveDx + moveDy*moveDy); const nDx = moveDx / dist; const nDy = moveDy / dist; this.x += nDx * currentSpeed; this.y += nDy * currentSpeed; this.lastMoveDx = nDx; this.lastMoveDy = nDy; }
+                    this.x = Math.max(0, Math.min(this.x, CANVAS_WIDTH - this.width)); this.y = Math.max(0, Math.min(this.y, CANVAS_HEIGHT - this.height));
+                }
+
+                 // Modified shoot method for multi-shot
+                shoot(triggeredByClick = false) { /* ... (same) ... */
+                    const currentTime = Date.now(); const currentShootDelay = aimbotActive ? AIMBOT_SHOOT_DELAY : this.shootDelayBase;
+                    let attemptShot = false;
+                    if (aimbotActive) { attemptShot = true; } 
+                    else if (mouseAimActive && triggeredByClick) { attemptShot = true; } 
+                    else if (!mouseAimActive && keysPressed[this.controls.shoot]) { attemptShot = true; }
+                    if (attemptShot && (currentTime - this.lastShotTime > currentShootDelay)) { this.lastShotTime = currentTime; const numBullets = this.bulletCount; const spreadAngle = Math.PI / 36; for (let i = 0; i < numBullets; i++) { const angleOffset = (i - (numBullets - 1) / 2) * spreadAngle; const currentAngle = this.aimAngle + angleOffset; const cosA = Math.cos(currentAngle); const sinA = Math.sin(currentAngle); const baseCosA = Math.cos(this.aimAngle); const baseSinA = Math.sin(this.aimAngle); const startOffsetX = baseCosA * (this.width / 2 + 5); const startOffsetY = baseSinA * (this.height / 2 + 5); this.projectiles.push(new Projectile( this.x + this.width / 2 + startOffsetX, this.y + this.height / 2 + startOffsetY, cosA * this.type.projectileSpeed, sinA * this.type.projectileSpeed, this.type.projectileColor ));}}
+                }
+
+
+                fireBeam() { /* ... (same) ... */
+                     if (this.beamReady && !this.isFiringBeam) { this.isFiringBeam = true; this.beamActiveStartTime = Date.now(); this.beamReady = false; this.beamCharge = 0; let closestTarget = null; let minDistanceSq = Infinity; gameTargets.forEach(target => { const dx = target.x + target.width/2 - (this.x + this.width/2); const dy = target.y + target.height/2 - (this.y + this.height/2); const distSq = dx*dx + dy*dy; if (distSq < minDistanceSq) { minDistanceSq = distSq; closestTarget = target; }}); if (closestTarget) { const dx = closestTarget.x + closestTarget.width/2 - (this.x + this.width/2); const dy = closestTarget.y + closestTarget.height/2 - (this.y + this.height/2); this.aimAngle = Math.atan2(dy, dx); }}
+                }
+                fireSmash() { /* ... (same) ... */
+                    if (this.smashReady && !this.isSmashing) { this.smashReady = false; this.smashCharge = 0; this.isSmashing = true; this.smashRadius = 0; }
+                }
+                
+                update(deltaTime) { /* ... (same) ... */
+                    if (this.health <= 0) { return; } this.updateAimDirection(); this.move(deltaTime); this.shoot(); 
+                    if (!this.beamReady && !this.isFiringBeam) { this.beamCharge += deltaTime; if (this.beamCharge >= this.beamChargeMax) { this.beamCharge = this.beamChargeMax; this.beamReady = true;} }
+                    if (!this.smashReady && !this.isSmashing) { this.smashCharge += deltaTime; if (this.smashCharge >= this.smashChargeMax) { this.smashCharge = this.smashChargeMax; this.smashReady = true;}}
+                    if (keysPressed[this.controls.beam]) { this.fireBeam(); } if (this.isFiringBeam && (Date.now() - this.beamActiveStartTime >= this.beamActiveDuration)) { this.isFiringBeam = false; }
+                    if (this.isSmashing) { this.smashRadius += this.smashExpansionSpeed * (deltaTime / (1000/60)); for (let i = gameTargets.length - 1; i >= 0; i--) { const target = gameTargets[i]; const distSq = Math.pow(target.x + target.width/2 - (this.x + this.width/2), 2) + Math.pow(target.y + target.height/2 - (this.y + this.height/2), 2); if (distSq <= Math.pow(this.smashRadius, 2)) { playerScore += SCORE_PER_SMASH_HIT; gameTargets.splice(i, 1);}} if (this.smashRadius >= this.smashMaxRadius) { this.isSmashing = false; this.smashRadius = 0; showTemporaryPopup("SMASHED!"); if (gameTargets.length === 0 && gameRunning && this.health > 0) { currentWave++; if (currentWave > MAX_WAVES_PER_LEVEL) { currentWave = 1; currentStage++; targetsPerWaveBase = Math.min(10, targetsPerWaveBase + 1); showTemporaryPopup(`Stage ${currentStage-1} Cleared! Onto Stage ${currentStage}!`);} else { showTemporaryPopup(`Wave ${currentWave-1} Cleared!`); } initializeStage(currentStage, currentWave);}}}
+                    this.projectiles.forEach((p, index) => { p.update(deltaTime); if (p.x > CANVAS_WIDTH + p.width || p.x < -p.width || p.y > CANVAS_HEIGHT + p.height || p.y < -p.height ) {this.projectiles.splice(index, 1);} });
+                }
+                reset(fullReset = true) { /* ... (same) ... */
+                    this.health = (gameMode === 'hell') ? 200 : this.initialHealth = 100; 
+                    this.projectiles = []; this.x = 50; this.y = CANVAS_HEIGHT / 2 - this.height / 2;
+                    this.beamCharge = 0; this.beamReady = false; this.isFiringBeam = false; this.smashCharge = 0; this.smashReady = false; this.isSmashing = false; this.smashRadius = 0;
+                    this.lastMoveDx = 1; this.lastMoveDy = 0; this.aimAngle = 0; this.aimbotTarget = null; 
+                    this.bulletCount = 1; 
+                    if (fullReset) {playerScore = 0;}
+                }
+                takeDamage(amount) { this.health -= amount; if (this.health < 0) {this.health = 0;} }
+                collectPowerUp(type) {
+                    if (type === 'multiShot' && this.bulletCount < MAX_BULLET_COUNT) {
+                        this.bulletCount++;
+                        showTemporaryPopup(`Multi-Shot Level ${this.bulletCount}!`);
+                    }
+                    updateUI(); 
+                }
+            }
+
+            // --- Projectile Class ---
+            class Projectile{
+                constructor(x,y,sX,sY,c){this.x=x-PROJECTILE_WIDTH/2;this.y=y-PROJECTILE_HEIGHT/2;this.width=PROJECTILE_WIDTH;this.height=PROJECTILE_HEIGHT;this.speedX=sX;this.speedY=sY;this.color=c;}
+                draw(){ctx.fillStyle=this.color;ctx.fillRect(this.x,this.y,this.width,this.height);}
+                update(dT){const dF=dT/(1000/60);this.x+=this.speedX*dF;this.y+=this.speedY*dF;}
+            }
+
+            let player1;
+            let lastFrameTime = 0;
+
+            // --- Spawn Targets ---
+            function spawnTargets(count, isInitialSpawn = true) { 
+                const enemyTypes = ['purple', 'orange', 'green', 'blue']; let availableTypes = [...enemyTypes];
+                if (currentStage === 1 && currentWave === 1) { availableTypes = ['blue']; }
+                else if (currentStage === 1 && currentWave === 2) { availableTypes = ['blue', 'green']; }
+                else if (currentStage === 1 && currentWave === 3) { availableTypes = ['blue', 'green', 'purple']; }
+                else if (currentStage === 2 && currentWave === 1) { availableTypes = ['green', 'purple']; }
+                else if (currentStage === 2 && currentWave === 2) { availableTypes = ['green', 'purple', 'orange']; }
+                else if ((currentStage === 3 && currentWave >= 2) || currentStage >= 4) { availableTypes = ['purple', 'orange', 'green']; } 
+                else { availableTypes = ['blue', 'green', 'purple']; } 
+                
+                let spawnMultiplier = 1.0;
+                // *** HELL MODE SPAWN RATE INCREASE ***
+                if (gameMode === 'hell') spawnMultiplier = isInitialSpawn ? 3.0 : HELL_MODE_EXTRA_SPAWN_COUNT + 1; // Increase initial and interval spawns
+                else if (gameMode === 'endless') spawnMultiplier = 1.3; 
+                
+                let numToSpawn = isInitialSpawn ? count : spawnMultiplier; 
+
+                for (let i = 0; i < numToSpawn; i++) { 
+                    const x = CANVAS_WIDTH + (Math.random() * 50 + 20) + i * 5; 
+                    const y = Math.random() * (CANVAS_HEIGHT - TARGET_SIZE_MAX); 
+                    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)]; 
+                    gameTargets.push(new Target(x, y, type)); 
+                }
+            };
+            function initializeStage(stage, wave) {
+                currentStage = stage; currentWave = wave; gameTargets = []; enemyProjectiles = []; powerUps = []; 
+                if (gameMode === 'endless' || gameMode === 'hell') { 
+                     stageDisplay.textContent = `${gameMode.charAt(0).toUpperCase() + gameMode.slice(1)} Mode: Wave ${wave}`; 
+                } else { 
+                     stageDisplay.textContent = `Stage ${stage}: Wave ${wave}`; 
+                }
+                let numToSpawn = targetsPerWaveBase + (wave - 1) * 1 + (stage - 1) * 2; 
+                spawnTargets(Math.max(1, numToSpawn), true); 
+                setNextPowerupSpawnTime();
+                if (gameMode === 'hell') { 
+                    setNextHellSpawnTime();
+                }
+                updateUI();
+            };
+
+             // --- Power-up Spawning ---
+            function setNextPowerupSpawnTime() {
+                nextPowerUpSpawnTime = Date.now() + POWERUP_SPAWN_INTERVAL; 
+                console.log(`Next powerup spawn scheduled around: ${new Date(nextPowerUpSpawnTime).toLocaleTimeString()}`); 
+            }
+            function trySpawnPowerUp() {
+                if (gameRunning && !isPopupOpen && Date.now() >= nextPowerUpSpawnTime) { 
+                    console.log("Spawning powerup!"); 
+                    const x = Math.random() * (CANVAS_WIDTH - POWERUP_SIZE);
+                    const y = Math.random() * (CANVAS_HEIGHT - POWERUP_SIZE);
+                    powerUps.push(new PowerUp(x, y, 'multiShot'));
+                    setNextPowerupSpawnTime(); 
+                }
+            }
+            // --- Hell Mode Spawning ---
+             function setNextHellSpawnTime() {
+                 // *** HELL MODE SPAWN INTERVAL REDUCED ***
+                nextHellSpawnTime = Date.now() + HELL_MODE_SPAWN_INTERVAL * 0.75; // Spawn even faster
+                console.log(`Next hell spawn scheduled around: ${new Date(nextHellSpawnTime).toLocaleTimeString()}`); 
+            }
+             function trySpawnHellEnemies() {
+                if (gameMode === 'hell' && gameRunning && !isPopupOpen && Date.now() >= nextHellSpawnTime) {
+                    console.log(`Spawning ${HELL_MODE_EXTRA_SPAWN_COUNT + 1} extra hell enemies!`); // Spawn more extra
+                    spawnTargets(0, false); 
+                    setNextHellSpawnTime(); 
+                }
+            }
+            
+            // --- Collision Detection ---
+            function checkCollisions() {
+                if (!player1 || player1.isSmashing) { return; } 
+                
+                player1.projectiles.forEach((p, pIndex) => { 
+                    for (let tIndex = gameTargets.length - 1; tIndex >= 0; tIndex--) { 
+                        const target = gameTargets[tIndex]; 
+                        if (p.x < target.x + target.width && p.x + p.width > target.x && p.y < target.y + target.height && p.y + p.height > target.y) { 
+                            target.takeDamage(10); 
+                            player1.projectiles.splice(pIndex, 1); 
+                            playerScore += SCORE_PER_HIT; 
+                            if (target.health <= 0) {gameTargets.splice(tIndex, 1);} 
+                            break; 
+                        }
+                    }
+                });
+
+                if (player1.isFiringBeam) { 
+                    const beamAngle = player1.aimAngle; 
+                    const beamLength = CANVAS_WIDTH * 1.5; 
+                    for (let tIndex = gameTargets.length - 1; tIndex >= 0; tIndex--) { 
+                        const target = gameTargets[tIndex]; 
+                        const tCX = target.x + target.width/2; 
+                        const tCY = target.y + target.height/2; 
+                        const pCX = player1.x + player1.width/2; 
+                        const pCY = player1.y + player1.height/2; 
+                        const dx = tCX - pCX; 
+                        const dy = tCY - pCY; 
+                        const distToP = Math.sqrt(dx*dx + dy*dy); 
+                        if (distToP < beamLength) { 
+                            const angleToT = Math.atan2(dy, dx); 
+                            const angleDiff = Math.abs(normalizeAngle(beamAngle - angleToT)); 
+                            if (angleDiff < Math.atan2(BEAM_THICKNESS/1.5, distToP) || distToP < target.size * 1.2 ) { 
+                                target.takeDamage(player1.beamDamagePerFrame); 
+                                playerScore += SCORE_PER_BEAM_FRAME; 
+                                if (target.health <= 0) {gameTargets.splice(tIndex, 1);}
+                            }
+                        }
+                    } 
+                }
+                function normalizeAngle(angle) { 
+                    while (angle > Math.PI) {angle -= 2*Math.PI;} 
+                    while (angle < -Math.PI) {angle += 2*Math.PI;} 
+                    return angle; 
+                };
+
+                for (let tIndex = gameTargets.length - 1; tIndex >= 0; tIndex--) { 
+                    const target = gameTargets[tIndex]; 
+                    if (player1.x < target.x + target.width && player1.x + player1.width > target.x && player1.y < target.y + target.height && player1.y + player1.height > target.y) { 
+                        player1.takeDamage(TARGET_CONTACT_DAMAGE); 
+                        gameTargets.splice(tIndex, 1); 
+                    }
+                }
+
+                for (let epIndex = enemyProjectiles.length - 1; epIndex >= 0; epIndex--) { 
+                    const ep = enemyProjectiles[epIndex]; 
+                    if (player1.health > 0 && ep.x < player1.x + player1.width && ep.x + ep.width > player1.x && ep.y < player1.y + player1.height && ep.y + ep.height > player1.y) { 
+                        player1.takeDamage(ep.damage); 
+                        enemyProjectiles.splice(epIndex, 1);
+                    }
+                }
+
+                 // Player vs PowerUps
+                for (let puIndex = powerUps.length - 1; puIndex >= 0; puIndex--) {
+                    const powerUp = powerUps[puIndex];
+                    if (player1.x < powerUp.x + powerUp.size &&
+                        player1.x + player1.width > powerUp.x &&
+                        player1.y < powerUp.y + powerUp.size &&
+                        player1.y + player1.height > powerUp.y) {
+                        player1.collectPowerUp(powerUp.type);
+                        powerUps.splice(puIndex, 1); 
+                    }
+                }
+
+
+                // --- Wave/Level Completion Logic ---
+                if (!player1.isSmashing && gameTargets.length === 0 && gameRunning && player1.health > 0) {
+                    if (gameMode === 'normal' && currentStage === COMPLETION_STAGE && currentWave === MAX_WAVES_PER_LEVEL) {
+                        showGameCompletionPopup();
+                    } else { // Endless, Hell, or Normal progression
+                        currentWave++;
+                        if (gameMode === 'normal' && currentWave > MAX_WAVES_PER_LEVEL) { 
+                            currentWave = 1; 
+                            currentStage++; 
+                            targetsPerWaveBase = Math.min(10, targetsPerWaveBase + 1); 
+                            showTemporaryPopup(`Stage ${currentStage-1} Cleared! Onto Stage ${currentStage}!`);
+                        } else if (gameMode === 'hell' && currentWave > MAX_WAVES_PER_LEVEL) { // Hell mode also has stages for now
+                             currentWave = 1; 
+                             currentStage++;
+                             targetsPerWaveBase = Math.min(15, targetsPerWaveBase + 2); 
+                             showTemporaryPopup(`Hell Stage ${currentStage-1} Cleared! Prepare for more!`);
+                        } else { 
+                            showTemporaryPopup(`Wave ${currentWave-1} Cleared!`);
+                        }
+                        // For Hell/Endless, stage doesn't increment *here* if just wave increments
+                        initializeStage(currentStage, currentWave); 
+                    }
+                }
+                if (player1.health <= 0 && gameRunning) { 
+                    announceOutcome("Game Over!", false); 
+                }
+                updateUI(); 
+            };
+            
+            // --- Game Completion Popup ---
+            function showGameCompletionPopup() {
+                gameRunning = false; 
+                messageText.textContent = "You have successfully beat all the stages! Now you can choose to go into Hell Mode, or Endless Mode.";
+                codeInputSection.classList.add('hidden');
+                deathOptions.classList.add('hidden');
+                hellConfirmOptions.classList.add('hidden');
+                completionOptions.classList.remove('hidden'); 
+                messageBox.classList.remove('hidden');
+                isPopupOpen = true;
+            }
+
+            function updateUI() { 
+                if (!player1) return; 
+                scoreDisplay.textContent = `Score: ${playerScore}`; 
+                healthDisplay.textContent = `Health: ${player1.health}`; 
+                bulletCountDisplay.textContent = `Shots: ${player1.bulletCount}`; 
+                player1.updateChargeIndicators();
+            };
+            function announceOutcome(message, isVictory) { gameRunning = false; messageText.textContent = message; codeInputSection.classList.add('hidden'); completionOptions.classList.add('hidden'); hellConfirmOptions.classList.add('hidden'); deathOptions.classList.remove('hidden'); if (!isVictory) { actionButton1.textContent = "Respawn"; actionButton2.classList.remove('hidden'); actionButton2.textContent = "Revive"; const pN = prompt("Game Over! Enter name for leaderboard:", `Fox${Math.floor(Math.random()*1000)}`) || "AnonFox"; saveScoreToLeaderboard(pN, playerScore); displayLeaderboard(); leaderboardContainer.classList.remove('hidden');} else { /* Victory case (currently unused) */ actionButton1.textContent = "Continue"; actionButton2.classList.add('hidden'); leaderboardContainer.classList.add('hidden');} messageBox.classList.remove('hidden'); isPopupOpen = true; };
+            actionButton1.addEventListener('click', () => { messageBox.classList.add('hidden'); leaderboardContainer.classList.add('hidden'); isPopupOpen = false; gameMode = 'normal'; document.body.className = 'select-none'; player1.reset(true); currentStage = 1; currentWave = 1; targetsPerWaveBase = 3; initializeStage(1, 1); gameRunning = true; lastFrameTime = performance.now(); requestAnimationFrame(gameLoop);}); 
+            // actionButton2 (Revive) now handled by showing the code input popup
+            // submitCodeButton handles the actual revive logic
+            function saveScoreToLeaderboard(name, score) {
+                let l = JSON.parse(localStorage.getItem('ssbbLeaderboard_v4.6')) || []; 
+                l.push({ name, score, date: new Date().toLocaleDateString(), stage: `${gameMode.substring(0,1).toUpperCase()}-S${currentStage}W${currentWave}` }); 
+                l.sort((a, b) => b.score - a.score); l = l.slice(0, 10); localStorage.setItem('ssbbLeaderboard_v4.6', JSON.stringify(l));
+            };
+            function displayLeaderboard() {
+                leaderboardList.innerHTML = ""; const l = JSON.parse(localStorage.getItem('ssbbLeaderboard_v4.6')) || [];
+                if (l.length === 0) { leaderboardList.innerHTML = "<li>No scores yet!</li>"; return; }
+                l.forEach(e => { const li = document.createElement('li'); li.textContent = `${e.name}: ${e.score} (${e.stage} - ${e.date})`; leaderboardList.appendChild(li); });
+            };
+
+            function gameLoop(currentTime) {
+                 if (!gameRunning) { return; } 
+                
+                const dT = (currentTime - lastFrameTime) || (1000/60); 
+                lastFrameTime = currentTime;
+                
+                // Try spawning power-up & hell enemies
+                trySpawnPowerUp();
+                trySpawnHellEnemies(); // Check for extra hell spawns
+
+                ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+                
+                if (player1) { player1.update(dT); player1.draw(); } 
+                
+                gameTargets.forEach(t => { if (player1) { t.update(player1.x, player1.y, dT, gameTargets); } t.draw(); }); 
+                enemyProjectiles.forEach((ep, i) => { ep.update(dT); ep.draw(); if (ep.x > CANVAS_WIDTH+ep.width || ep.x < -ep.width || ep.y > CANVAS_HEIGHT+ep.height || ep.y < -ep.height) { enemyProjectiles.splice(i, 1); } });
+                powerUps.forEach((pu, i) => { 
+                    if (pu.update(dT)) { 
+                        powerUps.splice(i, 1);
+                    } else {
+                        pu.draw(); 
+                    }
+                });
+                if (player1) { player1.projectiles.forEach(p => p.draw()); }
+                
+                checkCollisions(); 
+                requestAnimationFrame(gameLoop);
+            };
+
+            function resizeCanvas() {
+                const vW=window.innerWidth; const vH=window.innerHeight;
+                const hEH=document.querySelector('h1').offsetHeight + document.querySelector('.ui-top-bar').offsetHeight + document.querySelector('.stage-info').offsetHeight;
+                const fEH=document.querySelector('.controls-info').offsetHeight + document.querySelector('.extra-buttons-container').offsetHeight + (leaderboardContainer.classList.contains('hidden')?0:leaderboardContainer.offsetHeight); 
+                const availH=vH-hEH-fEH-50;  const availW=vW*0.98;
+                const aspect=16/9; let nW=availW; let nH=nW/aspect; if(nH>availH){nH=availH;nW=nH*aspect;}
+                nW=Math.max(320,Math.min(nW,1280)); nH=Math.max(180,Math.min(nH,720));
+                canvas.width=nW; canvas.height=nH; CANVAS_WIDTH=nW; CANVAS_HEIGHT=nH;
+                if(player1){player1.x=Math.max(0,Math.min(player1.x,CANVAS_WIDTH-player1.width));player1.y=Math.max(0,Math.min(player1.y,CANVAS_HEIGHT-player1.height)); player1.smashMaxRadius = Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) * 0.75; player1.smashExpansionSpeed = player1.smashMaxRadius / 60;}
+                updateUI();
+            };
+
+            // --- Initialization ---
+            player1 = new FoxPlayer(50, CANVAS_HEIGHT / 2 - PLAYER_HEIGHT / 2, "Ranger", {
+                up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'Space', beam: 'KeyB', smash: 'KeyX'
+            });
+            resizeCanvas(); 
+            initializeStage(1, 1); 
+            setNextPowerupSpawnTime(); // Initial power-up spawn schedule
+            displayLeaderboard(); 
+            if (JSON.parse(localStorage.getItem('ssbbLeaderboard_v4.6'))?.length > 0) { leaderboardContainer.classList.remove('hidden'); }
+            lastFrameTime = performance.now(); 
+            gameLoop(lastFrameTime); 
+
+        }); // End of DOMContentLoaded listener
+    </script>
+</body>
+</html>
